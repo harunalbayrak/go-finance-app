@@ -1,7 +1,8 @@
-package utils
+package stockfinder
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 
@@ -30,6 +31,30 @@ func CreateStocksOnDatabase(database *gorm.DB) error {
 	db.CreateStocks(database, stocks)
 
 	return err
+}
+
+func DownloadStocksData(database *gorm.DB, rangeMap map[string]string) error {
+	if os.Getenv("DOWNLOAD_STOCKS_DATA") == "false" {
+		return errors.New("DOWNLOAD_STOCKS_DATA env. variable is false")
+	}
+
+	stocks, err := db.GetAllStocks(database)
+	if err != nil {
+		return err
+	}
+
+	for _, stock := range stocks {
+		for interval, period1 := range rangeMap {
+			fmt.Printf("%s Downloading (interval: %s)\n", stock.Code, interval)
+			err = stock.DownloadYahooCSV(interval, period1, "1716123973")
+			if err != nil {
+				fmt.Printf("Error: Downloading Yahoo CSV (%s): %s\n", err.Error(), stock.Code)
+				continue
+			}
+		}
+	}
+
+	return nil
 }
 
 func FindAllStocks() ([]models.Stock, error) {

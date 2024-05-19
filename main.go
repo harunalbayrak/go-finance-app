@@ -3,12 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/harunalbayrak/go-finance-app/app/db"
-	"github.com/harunalbayrak/go-finance-app/app/models"
-	"github.com/harunalbayrak/go-finance-app/app/utils"
-	"github.com/harunalbayrak/go-finance-app/pkg/yahoo"
+	"github.com/harunalbayrak/go-finance-app/app/utils/stockfinder"
 	"github.com/joho/godotenv"
 )
 
@@ -62,41 +59,46 @@ func main() {
 		log.Fatal("env loading error", err)
 	}
 
-	// 1. Configure the example database connection.
 	database, err := db.CreateDB()
 	if err != nil {
 		log.Fatal("creating db error", err)
 	}
 
-	err = utils.CreateStocksOnDatabase(database)
+	err = stockfinder.CreateStocksOnDatabase(database)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
-	// deneme1()
+	rangeMap := make(map[string]string)
+	rangeMap["1d"] = "643122373"
+	rangeMap["60m"] = "1655648113"
 
-	stocks, _ := db.GetAllStocks(database)
+	stockfinder.DownloadStocksData(database, rangeMap)
 
-	cookie, err := yahoo.GetCookie()
-	crumb, err := yahoo.GetCrumb(cookie)
+	// stocks, _ := db.GetAllStocks(database)
 
-	start := time.Now()
-	for i, stock := range stocks {
-		if i == 1 {
-			break
-		}
+	// cookie, err := yahoo.GetCookie()
+	// crumb, err := yahoo.GetCrumb(cookie)
 
-		fmt.Println("stock:", stock)
-		stock := models.Stock{Code: "EKIZ"}
-		yahooChart, _ := stock.GetYahooChart("1d", "5d")
-		fmt.Println("Stock:", yahooChart.Chart.Result[0].Meta.Symbol, "=", yahooChart.Chart.Result[0].Meta.RegularMarketPrice)
+	// start := time.Now()
+	// for i, stock := range stocks {
+	// 	if i == 1 {
+	// 		break
+	// 	}
 
-		yahooQuoteResponse, _ := stock.GetYahooQuoteResponse(cookie, crumb)
-		fmt.Printf("QuoteResponse: %+v\n", yahooQuoteResponse.QuoteResponse.Result)
+	// 	fmt.Println("stock:", stock)
+	// 	stock := models.Stock{Code: "EKIZ"}
+	// 	// yahooChart, _ := stock.GetYahooChart("1d", "5d")
+	// 	// fmt.Println("Stock:", yahooChart.Chart.Result[0].Meta.Symbol, "=", yahooChart.Chart.Result[0].Meta.RegularMarketPrice)
 
-	}
-	timeElapsed := time.Since(start)
-	fmt.Printf("The `for` loop took %s\n", timeElapsed)
+	// 	// yahooQuoteResponse, _ := stock.GetYahooQuoteResponse(cookie, crumb)
+	// 	// fmt.Printf("QuoteResponse: %+v\n", yahooQuoteResponse.QuoteResponse.Result)
+
+	// 	stock.DownloadYahooCSV("1d", "643122373", "1716123973")
+
+	// }
+	// timeElapsed := time.Since(start)
+	// fmt.Printf("The `for` loop took %s\n", timeElapsed)
 
 	// intervalStr := os.Getenv("REFRESH_INTERVAL")
 	// interval, err := strconv.Atoi(intervalStr)

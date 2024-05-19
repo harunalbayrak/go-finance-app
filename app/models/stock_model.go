@@ -7,11 +7,39 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/harunalbayrak/go-finance-app/app/utils/file"
 	"github.com/harunalbayrak/go-finance-app/pkg/yahoo"
 )
 
 type Stock struct {
 	Code string `json:"code"`
+}
+
+func (stock *Stock) DownloadYahooCSV(interval string, period1 string, period2 string) error {
+	baseURL := "https://query1.finance.yahoo.com/v7/finance"
+	filePath := "data/" + stock.Code + "-" + interval + ".csv"
+	if _, err := os.Stat(filePath); err == nil || os.IsExist(err) {
+		return fmt.Errorf("%s is exists", filePath)
+	}
+
+	requestURL := fmt.Sprintf("%s/download/%s.is?interval=%s&period1=%s&period2=%s", baseURL, stock.Code, interval, period1, period2)
+	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
+	if err != nil {
+		fmt.Printf("client: could not create request: %s\n", err)
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Printf("client: error making http request: %s\n", err)
+	}
+
+	resBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Printf("client: could not read response body: %s\n", err)
+	}
+	err = file.WriteCsvFile(filePath, string(resBody))
+
+	return err
 }
 
 func (stock *Stock) GetYahooChart(interval string, totalRange string) (*YahooChart, error) {
