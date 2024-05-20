@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/template/html/v2"
+	"github.com/harunalbayrak/go-finance-app/app/configs"
 	"github.com/harunalbayrak/go-finance-app/app/db"
 	"github.com/harunalbayrak/go-finance-app/app/utils/stockfinder"
 	"github.com/joho/godotenv"
@@ -24,6 +27,19 @@ func LoadEnvironmentVariables() error {
 	err := godotenv.Load(".env")
 
 	return err
+}
+
+func StartApp() {
+	engine := html.New("./views", ".html")
+	config := configs.FiberConfig(engine)
+	app := fiber.New(config)
+	app.Get("/", func(c *fiber.Ctx) error {
+		// Render index template
+		return c.Render("index", fiber.Map{
+			"Title": "Hello, World!",
+		})
+	})
+	log.Fatal(app.Listen(":3000"))
 }
 
 // func StartApp() {
@@ -71,9 +87,13 @@ func main() {
 
 	rangeMap := make(map[string]string)
 	rangeMap["1d"] = "643122373"
-	rangeMap["60m"] = "1655648113"
 
-	stockfinder.DownloadStocksData(database, rangeMap)
+	err = stockfinder.DownloadStocksData(database, rangeMap)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	StartApp()
 
 	// stocks, _ := db.GetAllStocks(database)
 
