@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/gocolly/colly"
 	"github.com/harunalbayrak/go-finance-app/app/db"
@@ -38,6 +40,7 @@ func DownloadStocksData(database *gorm.DB, rangeMap map[string]string) error {
 		return errors.New("DOWNLOAD_STOCKS_DATA env. variable is false")
 	}
 
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	stocks, err := db.GetAllStocks(database)
 	if err != nil {
 		return err
@@ -46,11 +49,31 @@ func DownloadStocksData(database *gorm.DB, rangeMap map[string]string) error {
 	for _, stock := range stocks {
 		for interval, period1 := range rangeMap {
 			fmt.Printf("%s Downloading (interval: %s)\n", stock.Code, interval)
-			err = stock.DownloadYahooCSV(interval, period1, "1716123973")
+			err = stock.DownloadYahooCSV(interval, period1, timestamp)
 			if err != nil {
 				fmt.Printf("Error: Downloading Yahoo CSV (%s): %s\n", err.Error(), stock.Code)
 				continue
 			}
+		}
+	}
+
+	return nil
+}
+
+func DownloadStockData(stockCode string, rangeMap map[string]string) error {
+	if os.Getenv("DOWNLOAD_STOCKS_DATA") == "false" {
+		return errors.New("DOWNLOAD_STOCKS_DATA env. variable is false")
+	}
+
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+	stock := models.Stock{Code: stockCode}
+
+	for interval, period1 := range rangeMap {
+		fmt.Printf("%s Downloading (interval: %s)\n", stock.Code, interval)
+		err := stock.DownloadYahooCSV(interval, period1, timestamp)
+		if err != nil {
+			fmt.Printf("Error: Downloading Yahoo CSV (%s): %s\n", err.Error(), stock.Code)
+			continue
 		}
 	}
 

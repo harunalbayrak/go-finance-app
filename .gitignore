@@ -21,8 +21,10 @@
 go.work
 go.work.sum
 
-# Data directory
+# Directories
 data
+python
+jupyter
 
 # Env file
 .env
